@@ -127,8 +127,22 @@ def run_pipeline(hidden_layers):
     # TODO: 
     return ((len(hidden_layers)*3)%100)/100
 
+
+# Task 6
+# Calculate measure of sparsity for a given model
+def calculate_sparsity_score(alpha, ihls, ils, df):
+    """
+    @param: alpha: hyperparameter between 0 and 1. Closer to 1 means jumping factor is more weighted. Closer to 0 means the 1/df is more weighted.
+    @param: ihls: Initial hidden layer size
+    @param: ils: input layer size
+    @param: df: division factor. (i.e. If first ihls is 40 and df is 2, then the hidden layers will have 40, 20, 10, 5, 2 sizes)
+    @returns: sparsity score. Returns -1 if the alpha is outside of the [0,1] range.
+    """
+    if not 0<=alpha<=1: return -1
+    jumping_factor = ihls/ils
+    return round(alpha*(jumping_factor) + (1-alpha)*1/df, 4)
+
+
 if __name__ == "__main__": 
     search_space = generate_search_space(48, 64)
-
-    print(zigzag_search(space))
-
+    print(zigzag_search(search_space))

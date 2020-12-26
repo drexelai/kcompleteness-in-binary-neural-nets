@@ -6,7 +6,7 @@ from main import diagonal_search
 from main import get
 from main import generate_primary_diagonal
 from main import generate_secondary_diagonal
-
+from main import calculate_sparsity_score
 
 class Test(unittest.TestCase):
 
@@ -94,6 +94,16 @@ class Test(unittest.TestCase):
                                       (3, 2): {(3, 2), (1, 4), (0, 5), (2, 3), (5, 0), (4, 1)}}
         for key, expected in correct_input_output_pairs.items():
             actual = generate_secondary_diagonal(search_space, *key)
+            self.assertEqual(actual, expected,
+                             "Expected: {}. Got: {}".format(expected, actual))
+
+    def test_calculate_sparsity_score(self):
+        correct_input_output_pairs = {(0.1, 40, 10,  4): 0.625, 
+                                      (0.1,  3, 10, 16): 0.0862, 
+                                      (0.5, 28, 10,  4): 1.525, 
+                                      (0.3,  2, 11,  8): 0.142}
+        for key, expected in correct_input_output_pairs.items():
+            actual = calculate_sparsity_score(*key)
             self.assertEqual(actual, expected,
                              "Expected: {}. Got: {}".format(expected, actual))
 
