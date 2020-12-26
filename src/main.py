@@ -62,14 +62,48 @@ def diagonal_search(space):
 # Traverse the search space via zigzags
 import collections
 def zigzag_search(space):
-    d = collections.defaultdict(list)
-    for i in range(len(space)):
-        for j in range(len(space[0])):
-            if (i+j) %2 == 1: # collect alternating diagonals
-                d[i+j].append(space[i][j])
-    return d.values()
-            
+    # TODO: 
+    result = []
+    for (i,j) in generate_one_zig(space, len(space)-1,0):
+        print(i,j)
+    # for i in range()
+    # def dfs(space,i,j): 
+    #     pass
+
+    return result
+
+def get(space, i, j):
+    if 0<=i<len(space) and 0<=j<len(space[0]) and space[i][j] != "#":
+        return space[i][j]
+
+
+def generate_primary_diagonal(space, i, j):
+    """
+    Diagonal will extend from top left corner to bottom right corner
+    """
+    result = set()
+    def helper(space, i, j , result):
+        if 0<=i<len(space) and 0<=j<len(space[0]) and (i,j) not in result:
+            result.add((i,j))
+            helper(space,i+1,j+1, result)
+            helper(space,i-1,j-1, result)
+    helper(space, i,j, result)
+    return result
+
+def generate_secondary_diagonal(space, i, j):
+    """
+    Diagonal will extend from bottom left corner to top right corner
+    """
+    result = set()
+    def helper(space, i, j , result):
+        if 0<=i<len(space) and 0<=j<len(space[0]) and (i,j) not in result:
+            result.add((i,j))
+            helper(space,i-1,j+1, result)
+            helper(space,i+1,j-1, result)
+    helper(space, i,j, result)
+    return result
+
 
 if __name__ == "__main__": 
-    space = generate_search_space(48, 64)
-    print(diagonal_search(space))
+    search_space = generate_search_space(48, 64)
+    print(generate_secondary_diagonal(search_space, 4, 3))

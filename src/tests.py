@@ -3,7 +3,9 @@ import unittest
 from main import calculate_model_architecture
 from main import generate_search_space
 from main import diagonal_search
-
+from main import get
+from main import generate_primary_diagonal
+from main import generate_secondary_diagonal
 
 class Test(unittest.TestCase):
 
@@ -41,11 +43,26 @@ class Test(unittest.TestCase):
                                                         "Should return collect search space")
     
     def test_diagonal_search_space_1(self):
-        space = generate_search_space(48, 64)
-        self.assertEqual(list(diagonal_search(space)), [[(1, 16), (2, 8)], [(1, 32), (2, 24), (4, 16), (8, 8)], 
+        search_space = generate_search_space(48, 64)
+        self.assertEqual(list(diagonal_search(search_space)), [[(1, 16), (2, 8)], [(1, 32), (2, 24), (4, 16), (8, 8)], 
                                                   [(1, 48), (2, 40), (4, 32), (8, 24), (16, 16), (32, 8)], 
                                                   [(4, 48), (8, 40), (16, 32), (32, 24)], [(16, 48), (32, 40)]], 
                                                   "Should return alternating diagonals in the search space matrix")
+    def test_get_1(self):
+        search_space = generate_search_space(48, 64)
+        self.assertEqual(get(search_space,4,3), (16,32), "Should be equal")
+    
+    def test_get_2(self):
+        search_space = generate_search_space(48, 64)
+        self.assertEqual(get(search_space,6,6), None, "Should be None")
+
+    def test_generate_primary_diagonal(self):
+        search_space = generate_search_space(48, 64)
+        self.assertEqual(generate_primary_diagonal(search_space,4,3), {(5, 4), (3, 2), (2, 1), (4, 3), (1, 0)}, "Should be equal")
+
+    def test_generate_secondary_diagonal(self):
+        search_space = generate_search_space(48, 64)
+        self.assertEqual(generate_secondary_diagonal(search_space,4,3), {(5, 2), (3, 4), (4, 3), (2, 5)}, "Should be equal")
 
 
 if __name__ == '__main__':
