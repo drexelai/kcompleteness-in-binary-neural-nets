@@ -11,7 +11,6 @@ def create_model_from_given_architecture(**args):
     model.add(BatchNormalization())
     hidden_layers = args['hidden_layers']
     for layer_number in range(len(hidden_layers)):
-        print(layer_number, hidden_layers, "#############################################")
         if layer_number == 0: 
             # Add input layer
             model.add(Dense(hidden_layers[layer_number], input_dim=11, activation='relu'))

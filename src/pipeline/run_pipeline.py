@@ -7,6 +7,7 @@ from pipeline.test import test
 from pipeline.argument_parser import parse_arguments
 import pandas as pd
 import os
+import sys
 
 COLUMNS = [
   'train_accuracy', 
@@ -61,29 +62,23 @@ def run_entire_pipeline_for_diagonal_search(**args):
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
             current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
-            exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search.csv'))
+            exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search_results.csv'))
 
 
-# Run pipe with parameter hidden_layers and returns train and test accuracy for zig_zag_search
-def run_entire_pipeline_for_zig_zag_search(**args):
-    # TODO: Test this
+# Run pipe with parameter hidden_layers and returns train and test accuracy for zigzag_search
+sys.setrecursionlimit(100000)
+"""
+Zigzag search is a CPU-bound heavy computation and will raise  RecursionError: maximum recursion depth exceeded in comparison due to its heavy computations.
+(Same for multithreading which does not exist in cpython due to GIL limitation).
+To get more information about this limitation: https://stackoverflow.com/a/13592002/427887
+"""
+def run_entire_pipeline_for_zigzag_search(**args):
     exp_data = pd.DataFrame(columns = COLUMNS)
+    exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag_results.csv'))
     search_space = generate_search_space(args['ihls'], args['df'])
-    reduced_search_space = zigzag_search(search_space)
-    for model_architecture in reduced_search_space:
-        for model_architecture in row:
-            df = model_architecture[0]
-            ihls = model_architecture[1]
-            args = parse_arguments([''])
-            args['hidden_layers'] = calculate_model_architecture(df, ihls)
-            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
-            sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
-            current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
-            exp_data = exp_data.append(current_row, ignore_index=True)
-            exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag.csv'))
-
-
-
+    result = zigzag_search(search_space)
+    print(result) # by the time, the space is reduced all models will have already been ran in the pipeline due to ONLINE nature of this traversal.
+    
 # SEARCH and SPARSITY METHODS
 # Task #1 
 # Generate the search space for a binary classification problem
@@ -91,8 +86,8 @@ def run_entire_pipeline_for_zig_zag_search(**args):
 
 def generate_search_space(max_x, max_y):
     """
-    @params: max_x : x axis consists of integer multiples of 8.
-    @params: max_y : y axis just consists of powers of 2.
+    @params: max_x : x axis consists of integer multiples of 8. (each value in the range(8, max_x+1. 8) represents one ihls)
+    @params: max_y : y axis just consists of powers of 2. (each value in the range 1,2,4,8,16,32 ... max_y (exclusive) represents one df)
     Each entry is the (division factor, initial hidden layer size)
     @returns search space (list)
     """
@@ -119,7 +114,6 @@ def calculate_model_architecture(df, ihls):
     current_layer_size = ihls
     matrix.append(current_layer_size)
     while current_layer_size // df > 1 and df!=1:
-        print(current_layer_size, df, ihls)
         current_layer_size = current_layer_size // df
         matrix.append(current_layer_size)
     return matrix
@@ -150,7 +144,6 @@ def diagonal_search(space):
 # Traverse the search space via zigzags
 import collections
 def zigzag_search(space):
-    # TODO: 
     result = []
     highest_accuracy = float("-inf")
     model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
@@ -159,25 +152,43 @@ def zigzag_search(space):
     def traverse_one_zig_zag(space, start_x, start_y, isPrimary):
         if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return
         # Collect all models in the diagonal
-        models_in_current_diagonal = generate_primary_diagonal(space, start_x,start_y) if isPrimary else generate_secondary_diagonal(space, start_x,start_y)
+        elements_in_current_diagonal = generate_primary_diagonal(space, start_x,start_y) if isPrimary else generate_secondary_diagonal(space, start_x,start_y)
         highest_accuracy, current_architecture = result[0]
         # Iterative over all the models in the diagonal
-        for (df,ihls) in models_in_current_diagonal:
+        for (x, y) in elements_in_current_diagonal:
+            # Already visited this element in another diagonal traversal. Skip it.
+            if space[x][y] == "#": continue 
             args = parse_arguments([''])
+            print("##############")
+            print(x, y)
+            pretty_print_search_space(space)
+            print("##############")
+            df = space[x][y][0]
+            ihls = space[x][y][1]
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
-            _, _, current_accuracy, _, _, _, _, _  = run_pipe(**args)
+            # Write the results.             
+            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args) # Have to run the pipe while searching due to its ONLINE nature 
+            sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
+            
+            current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
+            exp_data = pd.DataFrame(columns = COLUMNS)
+            exp_data = exp_data.append(current_row, ignore_index=True)
+            exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag_results.csv'), header=None, mode='a')
+            
             # Update highest accuracy and the model
-            if highest_accuracy < current_accuracy:
-                result[0] = (current_accuracy, (df,ihls))
+            if highest_accuracy < test_accuracy:
+                current_architecture = (x,y)
+                result[0] = (test_accuracy, current_architecture)
             # Mark the node as visited after traversing it
-            space[df][ihls] = "#"
+            space[x][y] = "#"
         
         # Current diagonal traversal is over, go over
-        traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
+        return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
             
 
     traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)      
     return result
+
 def get(space, i, j):
     if 0<=i<len(space) and 0<=j<len(space[0]) and space[i][j] != "#":
         return space[i][j]

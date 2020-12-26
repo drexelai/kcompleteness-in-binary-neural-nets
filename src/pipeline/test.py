@@ -31,8 +31,8 @@ def test(X, y, model, **args):
     # TP FP
     # FN TN
     tn, fp, fn, tp = confusion_matrix(y, y_pred > args["threshold"]).ravel()
-    precision = tp / (tp+fp)
-    recall = tp/ (tp + fn)
+    precision = tp / (tp+fp) if tp+fp !=0 else 0
+    recall = tp/ (tp + fn) if tp+fn !=0 else 0
     # F1 score is the harmonic mean of precision and recall
-    F1 = 2 * (precision * recall) / (precision + recall)
+    F1 = 2 * (precision * recall) / (precision + recall) if precision + recall !=0 else 0
     return accuracy, area_under_curve, precision, recall, F1
