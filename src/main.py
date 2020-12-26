@@ -8,9 +8,9 @@ import time
 
 def main(args):
     args = parse_arguments(args)
-    run_entire_pipeline_for_brute_force_search(**args)
-    # run_entire_pipeline_for_diagonal_search(**args)
-    # run_entire_pipeline_for_zig_zag_search(**args)
+    # run_entire_pipeline_for_brute_force_search(**args) # 1178.3585526 seconds with df = 8, ihls = 48
+    # run_entire_pipeline_for_diagonal_search(**args) # 530.6440734 seconds with df = 8, ihls = 48
+    run_entire_pipeline_for_zig_zag_search(**args)
 
 
 if __name__ == "__main__": 

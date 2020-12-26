@@ -59,27 +59,28 @@ def run_entire_pipeline_for_diagonal_search(**args):
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
             train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
-            current_row = pd.DataFrame([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score,  args['hidden_layers']], columns=COLUMNS)
+            current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search.csv'))
 
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for zig_zag_search
 def run_entire_pipeline_for_zig_zag_search(**args):
-    pass # causing error
-    # # TODO: Test this
-    # exp_data = pd.DataFrame(columns = COLUMNS)
-    # search_space = generate_search_space(args['ihls'], args['df'])
-    # reduced_search_space = zigzag_search(search_space)
-    # for model_architecture in reduced_search_space:
-    #     df = model_architecture[0]
-    #     ihls = model_architecture[1]
-    #     args['hidden_layers'] = calculate_model_architecture(df, ihls)
-    #     train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
-    #     sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
-    #     current_row = pd.DataFrame([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score], columns=COLUMNS)
-    #     exp_data = exp_data.append(current_row, ignore_index=True)
-    #     exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag.csv'))
+    # TODO: Test this
+    exp_data = pd.DataFrame(columns = COLUMNS)
+    search_space = generate_search_space(args['ihls'], args['df'])
+    reduced_search_space = zigzag_search(search_space)
+    for model_architecture in reduced_search_space:
+        for model_architecture in row:
+            df = model_architecture[0]
+            ihls = model_architecture[1]
+            args = parse_arguments([''])
+            args['hidden_layers'] = calculate_model_architecture(df, ihls)
+            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
+            sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
+            current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
+            exp_data = exp_data.append(current_row, ignore_index=True)
+            exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag.csv'))
 
 
 
