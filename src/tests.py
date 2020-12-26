@@ -1,22 +1,31 @@
 import unittest
 
-from main import calculate_model_architecture
-from main import generate_search_space
-from main import diagonal_search
-from main import get
-from main import generate_primary_diagonal
-from main import generate_secondary_diagonal
-from main import calculate_sparsity_score
+from pipeline.run_pipeline import calculate_model_architecture
+from pipeline.run_pipeline import generate_search_space
+from pipeline.run_pipeline import diagonal_search
+from pipeline.run_pipeline import get
+from pipeline.run_pipeline import generate_primary_diagonal
+from pipeline.run_pipeline import generate_secondary_diagonal
+from pipeline.run_pipeline import calculate_sparsity_score
 
 class Test(unittest.TestCase):
 
     def test_calculate_model_architecture_1(self):
-        self.assertEqual(calculate_model_architecture(48, 2), [
-                         48, 24, 12, 6, 3], "Should be [48, 24, 12, 6, 3]")
-
+        expected =  [48, 24, 12, 6, 3]
+        actual = calculate_model_architecture(2, 48)
+        self.assertEqual(actual, expected,
+                             "Expected: {}. Got: {}".format(expected, actual))
     def test_calculate_model_architecture_2(self):
-        self.assertEqual(calculate_model_architecture(40, 2), [
-                         40, 20, 10, 5, 2], "Should be [40, 20, 10, 5, 2]")
+        expected = [40, 20, 10, 5, 2]
+        actual = calculate_model_architecture(2, 40)
+        self.assertEqual(actual, expected,
+                             "Expected: {}. Got: {}".format(expected, actual))
+
+    def test_calculate_model_architecture_3(self):
+        expected = [8]
+        actual = calculate_model_architecture(1, 8)
+        self.assertEqual(actual, expected,
+                             "Expected: {}. Got: {}".format(expected, actual))
 
     def test_generate_search_space_1(self):
         self.assertEqual(generate_search_space(-1, -1), [],

@@ -133,3 +133,6 @@ dmypy.json
 .nonadmin
 /conda-meta
 /env
+
+# vscode
+/*vscode*

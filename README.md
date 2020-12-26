@@ -14,3 +14,10 @@ https://jamesmccaffrey.wordpress.com/2018/03/14/datasets-for-binary-classificati
 `conda activate sparsity`
 * [OPTIONAL] If you need to install a new package, you can do `pip install package`.
 * Finally, do `conda deactivate` when you are done.
+
+## Run
+`python main.py`
+User arguments can be passed such as:
+`python main.py -verbose=1 -batch_size=12` 
+For a full list of arguments see, pipeline/argument_parser.py file.
+

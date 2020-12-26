@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 def get_titanic_data(**args):
-    data = pd.read_csv(os.path.join('datasets', 'titanic.csv'))
+    data = pd.read_csv(os.path.join('..','datasets', 'titanic.csv'))
     X, y = data[['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']], data['survived']
     X[['age', 'fare']]=X[['age', 'fare']].replace('?', np.nan)
     imp_mean = SimpleImputer(missing_values=np.nan, strategy='mean')
@@ -22,7 +22,7 @@ def get_titanic_data(**args):
 
 
 def get_data_churn_rate(**args):
-    dataset = pd.read_csv(os.path.join('datasets', 'ChurnModel.csv'))
+    dataset = pd.read_csv(os.path.join('..', 'datasets', 'ChurnModel.csv'))
     X = dataset.iloc[:, 3:13].values
     #We store the Dependent value/predicted value in y by storing the 13th index in the variable y
     y = dataset.iloc[:, 13].values
