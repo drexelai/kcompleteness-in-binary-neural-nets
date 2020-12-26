@@ -64,14 +64,30 @@ import collections
 def zigzag_search(space):
     # TODO: 
     result = []
-    for (i,j) in generate_one_zig(space, len(space)-1,0):
-        print(i,j)
-    # for i in range()
-    # def dfs(space,i,j): 
-    #     pass
+    highest_accuracy = float("-inf")
+    model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
+    result.append((highest_accuracy, model_architecture))
+    
+    def traverse_one_zig_zag(space, start_x, start_y, isPrimary):
+        if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return
+        # Collect all models in the diagonal
+        models_in_current_diagonal = generate_primary_diagonal(space, start_x,start_y) if isPrimary else generate_secondary_diagonal(space, start_x,start_y)
+        highest_accuracy, current_architecture = result[0]
+        # Iterative over all the models in the diagonal
+        for (x,y) in models_in_current_diagonal:
+            current_accuracy  = run_pipeline(calculate_model_architecture(x,y))
+            # Update highest accuracy and the model
+            if highest_accuracy < current_accuracy:
+                result[0] = (current_accuracy, (x,y))
+            # Mark the node as visited after traversing it
+            space[x][y] = "#"
+        
+        # Current diagonal traversal is over, go over
+        traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
+            
 
+    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)      
     return result
-
 def get(space, i, j):
     if 0<=i<len(space) and 0<=j<len(space[0]) and space[i][j] != "#":
         return space[i][j]
@@ -104,6 +120,15 @@ def generate_secondary_diagonal(space, i, j):
     return result
 
 
+# Task 5
+# Compile the model so that model = the input layer + hidden layers + output layer 
+# Train and test the model
+def run_pipeline(hidden_layers):
+    # TODO: 
+    return ((len(hidden_layers)*3)%100)/100
+
 if __name__ == "__main__": 
     search_space = generate_search_space(48, 64)
-    print(generate_secondary_diagonal(search_space, 4, 3))
+
+    print(zigzag_search(space))
+
