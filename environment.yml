@@ -1,0 +1,7 @@
+name: sparsity
+channels:
+  - defaults
+dependencies:
+  - pandas
+  - keras
+  - numpy

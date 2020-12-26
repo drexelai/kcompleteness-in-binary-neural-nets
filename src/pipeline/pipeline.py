@@ -11,6 +11,8 @@ from search_sparsity import diagonal_search
 from search_sparsity import zigzag_search
 from search_sparsity import calculate_model_architecture
 import pandas as pd
+import os
+
 # Run pipe and returns train accuracy and test accuracy
 def run_pipe(**args):
     prepare_data = get_data_churn_rate if args["use_churn_data"] else get_titanic_data
@@ -35,13 +37,13 @@ def run_entire_pipeline_for_brute_force_search(**args):
     reduced_search_space = brute_force_search(search_space)
     for model_architecture in reduced_search_space:
         args['hidden_layers'] = calculate_model_architecture(*model_architecture)
-        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model = run_pipe(**args)
+        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
         current_row = pd.DataFrame([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1], columns=columns)
         exp_data = exp_data.append(current_row)
         exp_data.to_csv(os.path.join(args['results_dir'], 'brute_force_results.csv'))
 
 
-# Run pipe with parameter hidden_layers and returns train and test accuracy for brute_force
+# Run pipe with parameter hidden_layers and returns train and test accuracy for diagonal_search
 def run_entire_pipeline_for_diagonal_search(**args):
     columns = [
 		'train_accuracy', 
@@ -57,13 +59,13 @@ def run_entire_pipeline_for_diagonal_search(**args):
     reduced_search_space = diagonal_search(search_space)
     for model_architecture in reduced_search_space:
         args['hidden_layers'] = calculate_model_architecture(*model_architecture)
-        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model = run_pipe(**args)
+        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
         current_row = pd.DataFrame([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1], columns=columns)
         exp_data = exp_data.append(current_row)
         exp_data.to_csv(os.path.join(args['results_dir'], 'diagonal_search.csv'))
 
 
-# Run pipe with parameter hidden_layers and returns train and test accuracy for brute_force
+# Run pipe with parameter hidden_layers and returns train and test accuracy for zig_zag_search
 def run_entire_pipeline_for_zig_zag_search(**args):
     # TODO
     columns = [
@@ -80,7 +82,7 @@ def run_entire_pipeline_for_zig_zag_search(**args):
     reduced_search_space = zigzag_search(search_space)
     for model_architecture in reduced_search_space:
         args['hidden_layers'] = calculate_model_architecture(*model_architecture)
-        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model = run_pipe(**args)
+        train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
         current_row = pd.DataFrame([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1], columns=columns)
         exp_data = exp_data.append(current_row)
         exp_data.to_csv(os.path.join(args['results_dir'], 'zigzag.csv'))

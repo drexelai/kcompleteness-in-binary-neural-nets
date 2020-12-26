@@ -2,7 +2,7 @@
 # Date: 2020/11/10
 # Purpose: Take X, y, and n as input as well as parser arguments. Prints accuracy and return model and train accuracy
 
-from pipeline.model import create_model_from_given_architecture
+from model import create_model_from_given_architecture
 from keras.callbacks import EarlyStopping
 
 def train(X, y, **args):

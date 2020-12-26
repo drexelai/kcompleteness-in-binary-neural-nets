@@ -1,4 +1,4 @@
-from pipeline import run_pipe
+from run_pipeline import run_pipe
 from argument_parser import parse_arguments
 # Task #1 
 # Generate the search space for a binary classification problem
@@ -80,7 +80,7 @@ def zigzag_search(space):
         for (df,ihls) in models_in_current_diagonal:
             args = parse_arguments([''])
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
-            _, _, current_accuracy, _, _, _, _, _  = run_pipe(**arg)
+            _, _, current_accuracy, _, _, _, _, _  = run_pipe(**args)
             # Update highest accuracy and the model
             if highest_accuracy < current_accuracy:
                 result[0] = (current_accuracy, (df,ihls))
