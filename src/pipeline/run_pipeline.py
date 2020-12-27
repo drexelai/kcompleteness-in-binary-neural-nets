@@ -234,3 +234,80 @@ def calculate_sparsity_score(alpha, ihls, ils, df):
     if not 0<=alpha<=1: return -1
     jumping_factor = ihls/ils
     return round(alpha*(jumping_factor) + (1-alpha)*1/df, 4)
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm           # import colormap stuff!
+import math
+# This import registers the 3D projection, but is otherwise unused.
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+
+def generate_3d_height_map_given_csv_file():
+    path_to_csv_file = os.path.join('..', 'results', 'brute_force_results.csv')
+
+    if not os.path.exists(path_to_csv_file): 
+        print("path to csv file doesn't exist")
+        return 
+    args = parse_arguments([''])
+    df = pd.read_csv(path_to_csv_file)
+    print("csv is read\n", df.head(5))
+    # Get data
+    _x = np.arange(8, args['ihls']+1, 8)
+    _y = np.array([2**i for i in range(int(math.log(args['df'], 2)))])
+    len_x = len(_x)
+    len_y = len(_y)
+
+    _xx, _yy = np.meshgrid(_x, _y)
+    x, y = _xx.ravel(), _yy.ravel()
+    bottom = np.zeros_like(x)
+    width = 1
+    depth = 1
+
+    # Setup the figure and axes
+    fig = plt.figure(figsize=(4, 3))
+    ax1 = fig.add_subplot(221, projection='3d')
+    ax2 = fig.add_subplot(222, projection='3d')
+    ax3 = fig.add_subplot(223, projection='3d')
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.15, hspace=0.43)
+
+    # Plot train accuracies
+    train_accuracies = df['train_accuracy'].values.reshape((len_x * len_y)) 
+    dz = train_accuracies
+    cmap = cm.get_cmap('jet') # Get desired colormap - you can change this!
+    max_height = np.max(dz)  # get range of colorbars so we can normalize
+    min_height = np.min(dz)
+    # scale each z to [0,1], and get their rgb values
+    rgba = [cmap((k-min_height)/max_height) for k in dz] 
+
+    ax1.bar3d(x, y, bottom, width, depth, train_accuracies, color=rgba, zsort='average', shade=True)
+    ax1.set_xlabel('Initial Hidden Layer Size')
+    ax1.set_ylabel('Division Factor')
+    ax1.set_title('Train Accuracies')
+
+    # Plot test accuracies
+    test_accuracies = df['test_accuracy'].values.reshape((len_x * len_y))
+    dz = test_accuracies
+    cmap = cm.get_cmap('jet') # Get desired colormap - you can change this!
+    max_height = np.max(dz)  # get range of colorbars so we can normalize
+    min_height = np.min(dz)
+    # scale each z to [0,1], and get their rgb values
+    rgba = [cmap((k-min_height)/max_height) for k in dz] 
+    ax2.bar3d(x, y, bottom, width, depth, test_accuracies, color=rgba, zsort='average', shade=True)
+    ax2.set_xlabel('Initial Hidden Layer Size')
+    ax2.set_ylabel('Division Factor')
+    ax2.set_title('Test Accuracies')
+    
+    # Plot sparsity scores
+    sparsity_scores = df['sparsity_score'].values.reshape((len_x * len_y))
+    dz = sparsity_scores
+    cmap = cm.get_cmap('jet') # Get desired colormap - you can change this!
+    max_height = np.max(dz)  # get range of colorbars so we can normalize
+    min_height = np.min(dz)
+    # scale each z to [0,1], and get their rgb values
+    rgba = [cmap((k-min_height)/max_height) for k in dz] 
+    ax3.bar3d(x, y, bottom, width, depth, sparsity_scores,  color=rgba, zsort='average', shade=True)
+    ax3.set_xlabel('Initial Hidden Layer Size')
+    ax3.set_ylabel('Division Factor')
+    ax3.set_title('Sparsities')
+    plt.show()
+
