@@ -170,9 +170,13 @@ def zigzag_search(space):
     highest_accuracy = float("-inf")
     model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
     result.append((highest_accuracy, model_architecture))
-    fig1, ax1, fig2, ax2, styles = init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
-    def traverse_one_zig_zag(space, start_x, start_y, isPrimary):
-        if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return
+    fig1, ax1, ax2, styles = init_accuracy_loss_plots_combined(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
+
+    # Have to pass the figure handles between the recursive function calls otherwise the graphs re not plotted.
+    # This is more verbose than creating global variables, but the upside is that is easier to debug and more explicit
+    # (Pythonic because explicit is better than implicit)
+    def traverse_one_zig_zag(space, start_x, start_y, isPrimary, fig1, ax1, ax2):
+        if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return  fig1, ax1, ax2
         # Collect all models in the diagonal
         elements_in_current_diagonal = generate_primary_diagonal(space, start_x,start_y) if isPrimary else generate_secondary_diagonal(space, start_x,start_y)
         highest_accuracy, current_architecture = result[0]
@@ -191,8 +195,8 @@ def zigzag_search(space):
             # Write the results.             
             train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
             # Accumulate plots for each model fits on a figure
-            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'], next(styles, None))
-            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'], next(styles, None))
+            ax1 = plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'], next(styles, None))
+            ax2 = plot_loss_graphs_given_history(ax2, history, args['hidden_layers'], next(styles, None))
             # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
             # Append the current model results to csv
@@ -208,14 +212,19 @@ def zigzag_search(space):
             # Mark the node as visited after traversing it
             space[x][y] = "#"
         
-        # Current diagonal traversal is over, go over
-        return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
-            
-    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)     
+        args = parse_arguments([''])
+        if not fig1:
+            print("$$$$$$$$"*45)
+        fig1.savefig(os.path.join("..", args['fig_save_dir'], 'abc.png'), format="png", bbox_inches='tight')
+        # Current diagonal traversal is over, go again in anote
+        return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary, fig1, ax1, ax2)
+               
+        
+    
+    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False, fig1, ax1, ax2)     
+
     # Write the plots to disk
-    args = parse_arguments([''])
-    fig1.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_accuracy.png'), bbox_inches='tight')
-    fig2.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_loss.png'),  bbox_inches='tight')
+    # fig2.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_loss.png'), format="png", bbox_inches='tight')            
     return result
 
 def get(space, i, j):
@@ -352,6 +361,14 @@ def generate_3d_height_map_given_csv_file():
     plt.show()
 
 
+
+def init_accuracy_loss_plots_combined(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v']):
+    fig1, (ax1, ax2) = plt.subplots(1,2, sharex=False, sharey=False, figsize = (figw,figh)) # ax1.figure.set_size_inches(figw, figh)
+    colormap = plt.cm.viridis# LinearSegmentedColormap
+    Ncolors = min(colormap.N,Ncolors)
+    styles = itertools.cycle(itertools.product(mapcolors, m_styles))
+    return fig1, ax1, ax2, styles
+
 def init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v']):
     fig1, ax1 = plt.subplots(); ax1.figure.set_size_inches(figw, figh)
     fig2, ax2 = plt.subplots(); ax2.figure.set_size_inches(figw, figh)
@@ -362,6 +379,8 @@ def init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['nava
 
 def plot_accuracy_graphs_given_history(ax, history, hidden_layer_dimensions, styles):
     # Plot training/validation/testing/ accuracy
+    # args = parse_arguments([''])
+    # if len(history.history['accuracy']) != args['epoch'] or len(history.history['val_accuracy']) != args['epoch']: return ax
     hidden_layer_dimensions = str(hidden_layer_dimensions)
     ax.plot(history.history['accuracy'],label='training accuracy' + hidden_layer_dimensions, c=styles[0], linestyle='-', marker=styles[1])
     ax.plot(history.history['val_accuracy'],label='validation accuracy' + hidden_layer_dimensions, c=styles[0],  linestyle='--', marker=styles[1])
@@ -371,9 +390,12 @@ def plot_accuracy_graphs_given_history(ax, history, hidden_layer_dimensions, sty
     ax.set_ylabel('Training Accuracies')
     ax.grid(True)
     ax.set_title("Training and Validation Accuracy")
+    return ax
     
 def plot_loss_graphs_given_history(ax, history, hidden_layer_dimensions, styles):
     # Plot training/validation/testing/ loss
+    # args = parse_arguments([''])
+    # if len(history.history['accuracy']) != args['epoch'] or len(history.history['val_accuracy']) != args['epoch']: return ax
     hidden_layer_dimensions = str(hidden_layer_dimensions)
     ax.plot(history.history['loss'],label='training loss'+ hidden_layer_dimensions, c=styles[0], linestyle='-', marker=styles[1])
     ax.plot(history.history['val_loss'],label='validation loss'+ hidden_layer_dimensions, c=styles[0],  linestyle='--', marker=styles[1])
@@ -383,3 +405,8 @@ def plot_loss_graphs_given_history(ax, history, hidden_layer_dimensions, styles)
     ax.set_ylabel('Losses')
     ax.grid(True)
     ax.set_title("Training and Validation loss")
+    return ax
+
+
+# def save_loss_graphs_given_history(ax, history, hidden_layer_dimensions, styles):
+#     if len(history.history['accuracy']) != args['epoch'] or len(history.history['val_accuracy']) != args['epoch']: return
