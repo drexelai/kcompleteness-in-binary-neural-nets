@@ -243,7 +243,7 @@ import math
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
 def generate_3d_height_map_given_csv_file():
-    path_to_csv_file = os.path.join('..', 'results', 'brute_force_results.csv')
+    path_to_csv_file = os.path.join('..', 'results', 'titanic_brute_force_results.csv')
 
     if not os.path.exists(path_to_csv_file): 
         print("path to csv file doesn't exist")

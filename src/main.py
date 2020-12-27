@@ -8,23 +8,29 @@ import time
 import os
 def main(args):
     args = parse_arguments(args)
-    # Some runs for the brute force pipeline
+    # Churn model: Some runs for the brute force pipeline
     # 1178.3585526 seconds with df = 8, ihls = 48
     # 3854.4821924 seconds with df = 64 and ihls = 64
-    run_entire_pipeline_for_brute_force_search(**args) 
+    # Titanic model: Some runs for the brute force pipeline
+    # 139.0985318 seconds with df = 64 and ihls = 64
+    # run_entire_pipeline_for_brute_force_search(**args) 
     
-    # Some runs for the diagonal search pipeline
+    # Churn model: Some runs for the diagonal search pipeline
     # 530.6440734 seconds with df = 8, ihls = 48
     # 1989.9744428 seconds with df = 64 and ihls = 64
-    run_entire_pipeline_for_diagonal_search(**args) 
+    # Titanic model: Some runs for diagonal search pipeline
+    # 78.695224 seconds with df = 64 and ihls = 64
+    # run_entire_pipeline_for_diagonal_search(**args) 
     
-    # Some runs for the zigzag search pipeline
+    # Churn model: Some runs for the zigzag search pipeline
     # 240.3445642 seconds with df = 64, ihls = 48
     # 11 min 12 sec = 672 seconds with df = 64 and ihls = 64
-    run_entire_pipeline_for_zigzag_search(**args) 
+    # Titanic model: Some runs for diagonal search pipeline
+    # 66.6 seconds with df = 64 and ihgls = 64
+    # run_entire_pipeline_for_zigzag_search(**args) 
 
     # Plotting purposes
-    # generate_3d_height_map_given_csv_file()
+    generate_3d_height_map_given_csv_file()
 
 if __name__ == "__main__": 
     
