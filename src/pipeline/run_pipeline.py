@@ -1,14 +1,17 @@
 # Author: Isamu Isozaki, Yigit Alparslan
-# Date: 2020/11/10
+# Date: 2020/12/27
 # Purpose: Train and test for models with hidden layer at n dimensions
 from pipeline.get_data import get_titanic_data, get_data_churn_rate
 from pipeline.train import train
 from pipeline.test import test
 from pipeline.argument_parser import parse_arguments
+import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import sys
+import itertools
 import time
+
 COLUMNS = [
   'train_accuracy', 
   'val_accuracy', 
@@ -29,38 +32,13 @@ def run_pipe(**args):
     test_accuracy, area_under_curve, precision, recall, F1 = test(X_test, y_test, model, **args)
     return train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model, history
 
-def plot_accuracy_graphs_given_history(ax, history, hidden_layer_dimensions):
-    # Plot training/validation/testing/ accuracy
-    hidden_layer_dimensions = str(hidden_layer_dimensions)
-    ax.plot(history.history['accuracy'],label='training accuracy' + hidden_layer_dimensions, color = "blue")
-    ax.plot(history.history['val_accuracy'],label='validation accuracy' + hidden_layer_dimensions, color = "red")
-    ax.legend(loc=0)
-    ax.set_xlabel('epochs')
-    ax.set_xlim([0,len(history.history['accuracy'])])
-    ax.set_ylabel('Training Accuracies')
-    ax.grid(True)
-    ax.set_title("Training and Validation Accuracy")
     
-def plot_loss_graphs_given_history(ax, history, hidden_layer_dimensions):
-    # Plot training/validation/testing/ loss
-    hidden_layer_dimensions = str(hidden_layer_dimensions)
-    ax.plot(history.history['loss'],label='training loss'+ hidden_layer_dimensions)
-    ax.plot(history.history['val_loss'],label='validation loss'+ hidden_layer_dimensions)
-    ax.legend(loc=0)
-    ax.set_xlabel('epochs')
-    ax.set_xlim([0,len(history.history['accuracy'])])
-    ax.set_ylabel('Losses')
-    ax.grid(True)
-    ax.set_title("Training and Validation loss")
-    
-
 # Run pipe with parameter hidden_layers and returns train and test accuracy for brute_force
 def run_entire_pipeline_for_brute_force_search(**args):
     exp_data = pd.DataFrame(columns = COLUMNS)
     search_space = generate_search_space(args['ihls'], args['df'])
     reduced_search_space = brute_force_search(search_space)
-    fig1, ax1 = plt.subplots()
-    fig2, ax2 = plt.subplots()
+    fig1, ax1, fig2, ax2, styles = init_accuracy_loss_plots(Ncolors=4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
     for row in reduced_search_space:
         for model_architecture in row:
             df = model_architecture[0]
@@ -69,8 +47,8 @@ def run_entire_pipeline_for_brute_force_search(**args):
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
             train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
             # Accumulate plots for each model fits on a figure
-            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
-            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'], next(styles, None))
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'], next(styles, None))
             # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
             # Append the current model results to csv
@@ -78,8 +56,8 @@ def run_entire_pipeline_for_brute_force_search(**args):
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'brute_force_results.csv'))
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'brute_force_accuracy.png'))
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'brute_force_loss.png'))
+    fig1.savefig(os.path.join("..", args['fig_save_dir'], 'brute_force_accuracy.png'), bbox_inches='tight')
+    fig2.savefig(os.path.join("..", args['fig_save_dir'], 'brute_force_loss.png'), bbox_inches='tight')
 
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for diagonal_search
@@ -87,8 +65,7 @@ def run_entire_pipeline_for_diagonal_search(**args):
     exp_data = pd.DataFrame(columns = COLUMNS)
     search_space = generate_search_space(args['ihls'], args['df'])
     reduced_search_space = diagonal_search(search_space)
-    fig1, ax1 = plt.subplots()
-    fig2, ax2 = plt.subplots()
+    fig1, ax1, fig2, ax2, styles = init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
     for row in reduced_search_space:
         for model_architecture in row:
             df = model_architecture[0]
@@ -97,8 +74,8 @@ def run_entire_pipeline_for_diagonal_search(**args):
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
             train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
             # Accumulate plots for each model fits on a figure
-            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
-            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'], next(styles, None))
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'], next(styles, None))
             # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
             # Append the current model results to csv
@@ -106,8 +83,8 @@ def run_entire_pipeline_for_diagonal_search(**args):
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search_results.csv'))
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_accuracy.png'))
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_loss.png'))
+    fig1.savefig(os.path.join("..", args['fig_save_dir'], 'diagonal_search_accuracy.png'), bbox_inches='tight')
+    fig2.savefig(os.path.join("..", args['fig_save_dir'], 'diagonal_search_loss.png'), bbox_inches='tight')
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for zigzag_search
 sys.setrecursionlimit(100000)
@@ -123,6 +100,7 @@ def run_entire_pipeline_for_zigzag_search(**args):
     result = zigzag_search(search_space)
     print(result) # by the time, the space is reduced all models will have already been ran in the pipeline due to ONLINE nature of this traversal.
     
+
 # SEARCH and SPARSITY METHODS
 # Task #1 
 # Generate the search space for a binary classification problem
@@ -192,8 +170,7 @@ def zigzag_search(space):
     highest_accuracy = float("-inf")
     model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
     result.append((highest_accuracy, model_architecture))
-    fig1, ax1 = plt.subplots()
-    fig2, ax2 = plt.subplots()
+    fig1, ax1, fig2, ax2, styles = init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
     def traverse_one_zig_zag(space, start_x, start_y, isPrimary):
         if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return
         # Collect all models in the diagonal
@@ -214,12 +191,13 @@ def zigzag_search(space):
             # Write the results.             
             train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
             # Accumulate plots for each model fits on a figure
-            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
-            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'], next(styles, None))
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'], next(styles, None))
             # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
             # Append the current model results to csv
             current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
+            exp_data = pd.DataFrame(columns = COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag_results.csv'), header=None, mode='a')
             
@@ -233,11 +211,11 @@ def zigzag_search(space):
         # Current diagonal traversal is over, go over
         return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
             
-
     traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)     
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_accuracy.png'))
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_loss.png'))
+    args = parse_arguments([''])
+    fig1.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_accuracy.png'), bbox_inches='tight')
+    fig2.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_loss.png'),  bbox_inches='tight')
     return result
 
 def get(space, i, j):
@@ -287,8 +265,8 @@ def calculate_sparsity_score(alpha, ihls, ils, df):
     return round(alpha*(jumping_factor) + (1-alpha)*1/df, 4)
 
 
- # Task 6 
- # Plot 3D height map to indicate sparsity, train accuracy and test accuracies for each model
+# Task 6 
+# Plot 3D height map to indicate sparsity, train accuracy and test accuracies for each model
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm           # import colormap stuff!
@@ -373,3 +351,35 @@ def generate_3d_height_map_given_csv_file():
     ax3.set_title('Sparsities')
     plt.show()
 
+
+def init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v']):
+    fig1, ax1 = plt.subplots(); ax1.figure.set_size_inches(figw, figh)
+    fig2, ax2 = plt.subplots(); ax2.figure.set_size_inches(figw, figh)
+    colormap = plt.cm.viridis# LinearSegmentedColormap
+    Ncolors = min(colormap.N,Ncolors)
+    styles = itertools.cycle(itertools.product(mapcolors, m_styles))
+    return fig1, ax1, fig2, ax2, styles
+
+def plot_accuracy_graphs_given_history(ax, history, hidden_layer_dimensions, styles):
+    # Plot training/validation/testing/ accuracy
+    hidden_layer_dimensions = str(hidden_layer_dimensions)
+    ax.plot(history.history['accuracy'],label='training accuracy' + hidden_layer_dimensions, c=styles[0], linestyle='-', marker=styles[1])
+    ax.plot(history.history['val_accuracy'],label='validation accuracy' + hidden_layer_dimensions, c=styles[0],  linestyle='--', marker=styles[1])
+    ax.legend(bbox_to_anchor=(0.5, -0.2),fancybox=False, shadow=False, loc="upper center", ncol=6) # put legend on top right corner
+    ax.set_xlabel('epochs')
+    ax.set_xlim([0,len(history.history['accuracy'])])
+    ax.set_ylabel('Training Accuracies')
+    ax.grid(True)
+    ax.set_title("Training and Validation Accuracy")
+    
+def plot_loss_graphs_given_history(ax, history, hidden_layer_dimensions, styles):
+    # Plot training/validation/testing/ loss
+    hidden_layer_dimensions = str(hidden_layer_dimensions)
+    ax.plot(history.history['loss'],label='training loss'+ hidden_layer_dimensions, c=styles[0], linestyle='-', marker=styles[1])
+    ax.plot(history.history['val_loss'],label='validation loss'+ hidden_layer_dimensions, c=styles[0],  linestyle='--', marker=styles[1])
+    ax.legend(bbox_to_anchor=(0.5, -0.2),fancybox=False, shadow=False, loc="upper center", ncol=6) # put legend on top right corner
+    ax.set_xlabel('epochs')
+    ax.set_xlim([0,len(history.history['accuracy'])])
+    ax.set_ylabel('Losses')
+    ax.grid(True)
+    ax.set_title("Training and Validation loss")
