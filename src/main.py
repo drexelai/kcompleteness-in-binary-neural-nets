@@ -12,12 +12,12 @@ def main(args):
     # Some runs for the brute force pipeline
     # 1178.3585526 seconds with df = 8, ihls = 48
     # 3854.4821924 seconds with df = 64 and ihls = 64
-    run_entire_pipeline_for_brute_force_search(**args) 
+    # run_entire_pipeline_for_brute_force_search(**args) 
     
     # Some runs for the diagonal search pipeline
     # 530.6440734 seconds with df = 8, ihls = 48
-    # TODO seconds with df = 64 and ihls = 64
-    run_entire_pipeline_for_diagonal_search(**args) 
+    # 1989.9744428 seconds with df = 64 and ihls = 64
+    # run_entire_pipeline_for_diagonal_search(**args) 
     
     # Some runs for the zigzag search pipeline
     # 240.3445642 seconds with df = 64, ihls = 48
