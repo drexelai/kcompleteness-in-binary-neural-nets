@@ -8,7 +8,7 @@ from pipeline.argument_parser import parse_arguments
 import pandas as pd
 import os
 import sys
-
+import time
 COLUMNS = [
   'train_accuracy', 
   'val_accuracy', 
@@ -25,26 +25,61 @@ COLUMNS = [
 def run_pipe(**args):
     prepare_data = get_data_churn_rate if args["use_churn_data"] else get_titanic_data
     X_train, X_test, y_train, y_test = prepare_data(**args)
-    model, train_accuracy, val_accuracy = train(X_train, y_train, **args)
+    model, train_accuracy, val_accuracy, history = train(X_train, y_train, **args)
     test_accuracy, area_under_curve, precision, recall, F1 = test(X_test, y_test, model, **args)
-    return train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model
+    return train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, model, history
+
+def plot_accuracy_graphs_given_history(ax, history, hidden_layer_dimensions):
+    # Plot training/validation/testing/ accuracy
+    hidden_layer_dimensions = str(hidden_layer_dimensions)
+    ax.plot(history.history['accuracy'],label='training accuracy' + hidden_layer_dimensions, color = "blue")
+    ax.plot(history.history['val_accuracy'],label='validation accuracy' + hidden_layer_dimensions, color = "red")
+    ax.legend(loc=0)
+    ax.set_xlabel('epochs')
+    ax.set_xlim([0,len(history.history['accuracy'])])
+    ax.set_ylabel('Training Accuracies')
+    ax.grid(True)
+    ax.set_title("Training and Validation Accuracy")
+    
+def plot_loss_graphs_given_history(ax, history, hidden_layer_dimensions):
+    # Plot training/validation/testing/ loss
+    hidden_layer_dimensions = str(hidden_layer_dimensions)
+    ax.plot(history.history['loss'],label='training loss'+ hidden_layer_dimensions)
+    ax.plot(history.history['val_loss'],label='validation loss'+ hidden_layer_dimensions)
+    ax.legend(loc=0)
+    ax.set_xlabel('epochs')
+    ax.set_xlim([0,len(history.history['accuracy'])])
+    ax.set_ylabel('Losses')
+    ax.grid(True)
+    ax.set_title("Training and Validation loss")
+    
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for brute_force
 def run_entire_pipeline_for_brute_force_search(**args):
     exp_data = pd.DataFrame(columns = COLUMNS)
     search_space = generate_search_space(args['ihls'], args['df'])
     reduced_search_space = brute_force_search(search_space)
+    fig1, ax1 = plt.subplots()
+    fig2, ax2 = plt.subplots()
     for row in reduced_search_space:
         for model_architecture in row:
             df = model_architecture[0]
             ihls = model_architecture[1]
             args = parse_arguments([''])
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
-            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
+            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
+            # Accumulate plots for each model fits on a figure
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
+            # Append the current model results to csv
             current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'brute_force_results.csv'))
+    # Write the plots to disk
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'brute_force_accuracy.png')
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'brute_force_loss.png')
 
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for diagonal_search
@@ -52,18 +87,27 @@ def run_entire_pipeline_for_diagonal_search(**args):
     exp_data = pd.DataFrame(columns = COLUMNS)
     search_space = generate_search_space(args['ihls'], args['df'])
     reduced_search_space = diagonal_search(search_space)
+    fig1, ax1 = plt.subplots()
+    fig2, ax2 = plt.subplots()
     for row in reduced_search_space:
         for model_architecture in row:
             df = model_architecture[0]
             ihls = model_architecture[1]
             args = parse_arguments([''])
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
-            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args)
+            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
+            # Accumulate plots for each model fits on a figure
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
+            # Append the current model results to csv
             current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search_results.csv'))
-
+    # Write the plots to disk
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_accuracy.png')
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_loss.png')
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for zigzag_search
 sys.setrecursionlimit(100000)
@@ -148,7 +192,8 @@ def zigzag_search(space):
     highest_accuracy = float("-inf")
     model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
     result.append((highest_accuracy, model_architecture))
-    
+    fig1, ax1 = plt.subplots()
+    fig2, ax2 = plt.subplots()
     def traverse_one_zig_zag(space, start_x, start_y, isPrimary):
         if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return
         # Collect all models in the diagonal
@@ -167,11 +212,14 @@ def zigzag_search(space):
             ihls = space[x][y][1]
             args['hidden_layers'] = calculate_model_architecture(df, ihls)
             # Write the results.             
-            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _ = run_pipe(**args) # Have to run the pipe while searching due to its ONLINE nature 
+            train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, _, history = run_pipe(**args)
+            # Accumulate plots for each model fits on a figure
+            plot_accuracy_graphs_given_history(ax1, history, args['hidden_layers'])
+            plot_loss_graphs_given_history(ax2, history, args['hidden_layers'])
+            # Calculate sparsity score
             sparsity_score = calculate_sparsity_score(0.5, ihls, 11, df)
-            
+            # Append the current model results to csv
             current_row = pd.Series([train_accuracy, val_accuracy, test_accuracy, area_under_curve, precision, recall, F1, sparsity_score, args['hidden_layers']], index=COLUMNS)
-            exp_data = pd.DataFrame(columns = COLUMNS)
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'zigzag_results.csv'), header=None, mode='a')
             
@@ -186,7 +234,10 @@ def zigzag_search(space):
         return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary)
             
 
-    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)      
+    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)     
+    # Write the plots to disk
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_accuracy.png')
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_loss.png')
     return result
 
 def get(space, i, j):

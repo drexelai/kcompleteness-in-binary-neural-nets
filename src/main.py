@@ -13,7 +13,7 @@ def main(args):
     # 3854.4821924 seconds with df = 64 and ihls = 64
     # Titanic model: Some runs for the brute force pipeline
     # 139.0985318 seconds with df = 64 and ihls = 64
-    # run_entire_pipeline_for_brute_force_search(**args) 
+    run_entire_pipeline_for_brute_force_search(**args) 
     
     # Churn model: Some runs for the diagonal search pipeline
     # 530.6440734 seconds with df = 8, ihls = 48
@@ -30,7 +30,7 @@ def main(args):
     # run_entire_pipeline_for_zigzag_search(**args) 
 
     # Plotting purposes
-    generate_3d_height_map_given_csv_file()
+    # generate_3d_height_map_given_csv_file()
 
 if __name__ == "__main__": 
     
