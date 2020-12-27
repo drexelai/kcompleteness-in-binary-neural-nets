@@ -21,7 +21,7 @@ def main(args):
     
     # Some runs for the zigzag search pipeline
     # 240.3445642 seconds with df = 64, ihls = 48
-    # TODO seconds with df = 64 and ihls = 64
+    # 11 min 12 sec = 672 seconds with df = 64 and ihls = 64
     run_entire_pipeline_for_zigzag_search(**args) 
 
 if __name__ == "__main__": 
