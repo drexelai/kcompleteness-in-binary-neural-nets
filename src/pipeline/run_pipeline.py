@@ -78,8 +78,8 @@ def run_entire_pipeline_for_brute_force_search(**args):
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'brute_force_results.csv'))
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'brute_force_accuracy.png')
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'brute_force_loss.png')
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'brute_force_accuracy.png'))
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'brute_force_loss.png'))
 
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for diagonal_search
@@ -106,8 +106,8 @@ def run_entire_pipeline_for_diagonal_search(**args):
             exp_data = exp_data.append(current_row, ignore_index=True)
             exp_data.to_csv(os.path.join("..", args['results_dir'], 'diagonal_search_results.csv'))
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_accuracy.png')
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_loss.png')
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_accuracy.png'))
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'diagonal_search_loss.png'))
 
 # Run pipe with parameter hidden_layers and returns train and test accuracy for zigzag_search
 sys.setrecursionlimit(100000)
@@ -236,8 +236,8 @@ def zigzag_search(space):
 
     traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False)     
     # Write the plots to disk
-    fig1.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_accuracy.png')
-    fig2.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_loss.png')
+    fig1.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_accuracy.png'))
+    fig2.savefig(os.path.join("..", args['figures_dir'], 'zigzag_search_loss.png'))
     return result
 
 def get(space, i, j):
@@ -286,6 +286,9 @@ def calculate_sparsity_score(alpha, ihls, ils, df):
     jumping_factor = ihls/ils
     return round(alpha*(jumping_factor) + (1-alpha)*1/df, 4)
 
+
+ # Task 6 
+ # Plot 3D height map to indicate sparsity, train accuracy and test accuracies for each model
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm           # import colormap stuff!
@@ -294,6 +297,14 @@ import math
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
 def generate_3d_height_map_given_csv_file():
+    """
+    path_to_csv_file can be either os.path.join('..', 'results', 'titanic_brute_force_results.csv') or 
+    path_to_csv_file = os.path.join('..', 'results', 'churn_brute_force_results.csv')
+    The reason is that each dataset has same search space regardless of the search algorithm. An efficient search algorithm is
+    discovering less models in the search space and it is good to implement for speed up reasons but 
+    if we want to create a height map and include all the models, we need to use the brute force results because only that
+    csv file includes the sparsity and the accuracy for all models
+    """
     path_to_csv_file = os.path.join('..', 'results', 'titanic_brute_force_results.csv')
 
     if not os.path.exists(path_to_csv_file): 
