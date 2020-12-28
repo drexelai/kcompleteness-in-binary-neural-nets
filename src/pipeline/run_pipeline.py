@@ -170,13 +170,13 @@ def zigzag_search(space):
     highest_accuracy = float("-inf")
     model_architecture = (len(space) - 1,0) # pick bottom left corner because first zigzag will start with a secondary diagonal  
     result.append((highest_accuracy, model_architecture))
-    fig1, ax1, ax2, styles = init_accuracy_loss_plots_combined(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
+    fig1, ax1, fig2, ax2, styles = init_accuracy_loss_plots(figw = 19, figh = 9, Ncolors = 4, mapcolors= ['navajowhite', 'lime', 'deepskyblue','deeppink'], m_styles = ['.','o','^','*', 'P', 'v'])
 
     # Have to pass the figure handles between the recursive function calls otherwise the graphs re not plotted.
     # This is more verbose than creating global variables, but the upside is that is easier to debug and more explicit
     # (Pythonic because explicit is better than implicit)
-    def traverse_one_zig_zag(space, start_x, start_y, isPrimary, fig1, ax1, ax2):
-        if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return  fig1, ax1, ax2
+    def traverse_one_zig_zag(space, start_x, start_y, isPrimary, fig1, ax1, fig2, ax2):
+        if not (0<= start_x < len(space) and 0 <= start_y < len(space[0])) or get(space,start_x, start_y) == "#" : return  fig1, ax1, fig2, ax2
         # Collect all models in the diagonal
         elements_in_current_diagonal = generate_primary_diagonal(space, start_x,start_y) if isPrimary else generate_secondary_diagonal(space, start_x,start_y)
         highest_accuracy, current_architecture = result[0]
@@ -211,20 +211,15 @@ def zigzag_search(space):
                 result[0] = (test_accuracy, current_architecture)
             # Mark the node as visited after traversing it
             space[x][y] = "#"
-        
-        args = parse_arguments([''])
-        if not fig1:
-            print("$$$$$$$$"*45)
-        fig1.savefig(os.path.join("..", args['fig_save_dir'], 'abc.png'), format="png", bbox_inches='tight')
-        # Current diagonal traversal is over, go again in anote
-        return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary, fig1, ax1, ax2)
-               
-        
     
-    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False, fig1, ax1, ax2)     
-
-    # Write the plots to disk
-    # fig2.savefig(os.path.join("..", args['fig_save_dir'], 'zigzag_search_loss.png'), format="png", bbox_inches='tight')            
+        # Write the plots to disk
+        args = parse_arguments([''])
+        fig1.savefig(os.path.join("..", args['fig_save_dir'], 'abc1.png'), format="png", bbox_inches='tight')
+        fig2.savefig(os.path.join("..", args['fig_save_dir'], 'abc2.png'), format="png", bbox_inches='tight')            
+        # Current diagonal traversal is over, go again in anote
+        return traverse_one_zig_zag(space, current_architecture[0], current_architecture[1], not isPrimary, fig1, ax1, fig2, ax2)
+               
+    traverse_one_zig_zag(space ,model_architecture[0], model_architecture[1], False, fig1, ax1, fig2, ax2)     
     return result
 
 def get(space, i, j):
